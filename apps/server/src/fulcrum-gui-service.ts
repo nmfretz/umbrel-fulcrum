@@ -43,7 +43,8 @@ export function createFulcrumGuiService({ core, fulcrum, progress, connections }
     getLegacyVersion: () => fulcrum.getVersion(),
     async getLegacySyncPercent() {
       const coreInfo = await core.getBlockchainInfo();
-      if (coreInfo.initialblockdownload) return 0;
+      const dependency = await requiredCoreIndexStatus(coreInfo.blocks);
+      if (dependency) return 0;
       try {
         await fulcrum.getVersion();
         return ((await fulcrum.getTip()) / coreInfo.blocks) * 100;
@@ -58,9 +59,6 @@ export function createFulcrumGuiService({ core, fulcrum, progress, connections }
       try { coreInfo = await core.getBlockchainInfo(); }
       catch { return { state: "degraded", version: null, coreHeight: null, indexedHeight: null, percent: null, message: "Bitcoin Core is unavailable" }; }
 
-      if (coreInfo.initialblockdownload) {
-        return deriveIndexerStatus({ coreHeight: coreInfo.blocks, indexedHeight: null, initialBlockDownload: true, version: null });
-      }
       const dependency = await requiredCoreIndexStatus(coreInfo.blocks);
       if (dependency) return dependency;
       try {
